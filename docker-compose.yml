@@ -1,0 +1,29 @@
+version: '3'
+services:
+  tex:
+    build: ./docker/tex
+    image: iwanagak/tex:2019
+    container_name: tex
+    tty: true
+    volumes:
+      - ./docs:/root/workdir
+      - ./.latexmkrc:/root/.latexmkrc
+    working_dir: /root/workdir
+  notebook:
+    image: jupyter/datascience-notebook
+    container_name: notebook
+    ports:
+      - 8888:8888
+    volumes:
+      - ./notebooks:/home/jovyan/notebooks
+      - ./data:/home/jovyan/data
+  myenv:
+    build: ./docker/myenv
+    image: iwanagak/myenv:2019
+    container_name: myenv
+    tty: true
+    volumes:
+      - ./cmake-fortran-template:/root/myenv
+      - ./src:/root/myenv/src
+      - ./CMakeLists.txt:/root/myenv/CMakeLists.txt
+      - ./data:/root/data

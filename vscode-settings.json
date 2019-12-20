@@ -1,0 +1,64 @@
+{
+    "workbench.startupEditor": "none",
+    "editor.rulers": [80,100],
+    "workbench.iconTheme": "vscode-icons",
+    "editor.renderControlCharacters": true,
+    "editor.renderWhitespace": "boundary",
+    "editor.lineNumbers": "interval",
+    "editor.renderLineHighlight": "all",
+    "editor.dragAndDrop": false,
+    "editor.find.autoFindInSelection": "always",
+    "files.eol": "\n",
+    "files.autoGuessEncoding": true,
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
+    "files.trimTrailingWhitespace": true,
+    "files.watcherExclude": {
+        "**/data/backup**": true
+    },
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/bin": true,
+        "**/*.o": true,
+        "**/*.obj": true,
+        "**/*.ilk": true,
+        "**/*.pdb": true,
+        "**/*.tlog": true,
+        "**/*.idb": true,
+        "**/*.dll": true
+    },
+    "editor.minimap.enabled": false,
+    "editor.scrollBeyondLastLine": true,
+    // "workbench.editor.enablePreview": false,
+    "workbench.colorCustomizations": {
+        "statusBar.background": "#694d9fa0",
+        "statusBar.foreground": "#dddddd",
+        "tab.border": "#694d9fa0",
+        "sideBar.border": "#694d9fa0",
+        "activityBar.border": "#694d9fa0",
+        "statusBar.border": "#694d9fa0",
+        "editorGroup.border": "#694d9fa0",
+        "activityBar.foreground": "#d9bdff",
+        "activityBarBadge.background": "#d9bdff",
+        "activityBarBadge.foreground": "#000000",
+        "editor.selectionBackground": "#694d9fa0",
+        "list.activeSelectionBackground": "#694d9f50"
+    },
+    "files.associations": {
+        "*.pf": "fortran-modern"
+    },
+    "[fortran-modern]": {
+        "editor.tabSize": 2
+    },
+    "[latex]": {
+        "editor.tabSize": 2
+    },
+    "[tex]": {
+        "editor.tabSize": 2
+    },
+    "window.zoomLevel": 0
+}

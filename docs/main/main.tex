@@ -1,0 +1,62 @@
+\documentclass[a4paper,11pt]{jsarticle}
+
+% \usepackage[top=23truemm,bottom=25truemm,left=17truemm,right=17truemm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{bm}
+\usepackage[usenames, dvipsnames]{xcolor}
+\usepackage[dvipdfmx]{graphicx}
+\usepackage{verbatim}
+\usepackage{braket}
+\usepackage{subfiles}
+\usepackage{url}
+\usepackage{ascmac}
+\usepackage{listings}
+\usepackage{here}
+
+\renewcommand{\lstlistingname}{リスト}
+\lstset{
+    basicstyle       = \small\ttfamily,
+    keywordstyle     = \bfseries,
+    identifierstyle  = \color{blue},
+    commentstyle     = \color{olive},
+    moredelim        = [s][\color{ForestGreen}]{/**}{*/},
+    stringstyle      = \color{magenta},
+    frame            = single,
+    showstringspaces = false,
+    columns          = flexible,
+    numbers          = left,
+    xrightmargin     = 0zw,
+    xleftmargin      = 1zw,
+    numberstyle      = \scriptsize,
+    stepnumber       = 1,
+    numbersep        = 2zw,
+    lineskip         = -1.0ex,
+    extendedchars    = true,
+    framexleftmargin = 3zw
+}
+
+\newcommand{\diff}{\, \mathrm{d}}
+\newcommand{\boltzmann}{k_{\mathrm{B}}}
+\newcommand{\napier}{\mathrm{e}}
+
+% \renewcommand{\thesection}{\arabic{section}}
+
+\title{タイトル}
+\author{氏名}
+\date{日付}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+% subfile
+\subfile{../sub/main}
+
+% References
+\bibliography{../references}
+\bibliographystyle{junsrt}
+\nocite{*}
+
+\end{document}
