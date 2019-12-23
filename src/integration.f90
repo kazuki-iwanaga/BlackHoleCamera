@@ -40,21 +40,21 @@ contains
                                 k0)
 
     call null_geodesic_equation(E, L, Sigma, Delta, kappa, &
-                                r_0 + 0.5d0 * D_LAMBDA * k0(2), &
+                                r_0     + 0.5d0 * D_LAMBDA * k0(2), &
                                 theta_0 + 0.5d0 * D_LAMBDA * k0(3), &
-                                p_r_0 + 0.5d0 * D_LAMBDA * k0(5), &
+                                p_r_0   + 0.5d0 * D_LAMBDA * k0(5), &
                                 k1)
 
     call null_geodesic_equation(E, L, Sigma, Delta, kappa, &
-                                r_0 + 0.5d0 * D_LAMBDA * k1(2), &
+                                r_0     + 0.5d0 * D_LAMBDA * k1(2), &
                                 theta_0 + 0.5d0 * D_LAMBDA * k1(3), &
-                                p_r_0 + 0.5d0 * D_LAMBDA * k1(5), &
+                                p_r_0   + 0.5d0 * D_LAMBDA * k1(5), &
                                 k2)
 
     call null_geodesic_equation(E, L, Sigma, Delta, kappa, &
-                                r_0 + D_LAMBDA * k2(2), &
+                                r_0     + D_LAMBDA * k2(2), &
                                 theta_0 + D_LAMBDA * k2(3), &
-                                p_r_0 + D_LAMBDA * k2(5), &
+                                p_r_0   + D_LAMBDA * k2(5), &
                                 k3)
 
     ! initialization
