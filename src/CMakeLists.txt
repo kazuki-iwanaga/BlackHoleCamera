@@ -4,6 +4,7 @@ target_link_libraries(main
         calculation
         integration
         parameters
+        transformation
     )
 
 add_fortran_library(calculation
@@ -18,6 +19,12 @@ add_fortran_library(integration
     )
 
 add_fortran_library(parameters
+    parameters.f90
+    )
+
+add_fortran_library(transformation
+    transformation.f90
+    calculation.f90
     parameters.f90
     )
 

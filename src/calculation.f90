@@ -2,10 +2,39 @@ module calculation
 
   implicit none
   public :: calc_ELQ, calc_Energy, calc_Angular_Momentum, &
-            calc_Carter_Constant, calc_Sigma, calc_Delta
+            calc_Carter_Constant, calc_Sigma, calc_Delta, &
+            deg2rad, rad2deg
   private
 
 contains
+
+!===============================================================================
+  subroutine deg2rad(deg, rad)
+
+    use parameters
+
+    implicit none
+    real(8), intent(in)  :: deg
+    real(8), intent(out) :: rad
+
+    rad = deg * PI / 180.0d0
+
+    return
+  end subroutine deg2rad
+
+!===============================================================================
+  subroutine rad2deg(rad, deg)
+
+    use parameters
+
+    implicit none
+    real(8), intent(in)  :: rad
+    real(8), intent(out) :: deg
+
+    deg = rad * 180.0d0 / PI
+
+    return
+  end subroutine rad2deg
 
 !===============================================================================
   subroutine calc_ELQ(r, theta, dot_r, dot_theta, dot_phi, E, L, Q)

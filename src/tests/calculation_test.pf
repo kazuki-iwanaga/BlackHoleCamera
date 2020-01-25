@@ -1,0 +1,22 @@
+module calculation_test
+
+  use PFUNIT_MOD
+  use calculation
+  use parameters
+
+  implicit none
+
+contains
+
+!===============================================================================
+  @Test
+  subroutine CalcSigmaTest
+
+    implicit none
+
+    @assertEqual(1.0d0, 1.0d0, tolerance=EPS)
+
+    return
+  end subroutine CalcSigmaTest
+
+end module calculation_test

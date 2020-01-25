@@ -77,6 +77,8 @@ contains
     p_theta_1 = p_theta_0 + D_LAMBDA * RK_inc(6)
     ! ->
 
+    print *, RK_inc
+
     return
   end subroutine null_geodesic_RK4
 
