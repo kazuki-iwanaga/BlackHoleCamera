@@ -12,6 +12,7 @@ services:
   notebook:
     image: jupyter/datascience-notebook
     container_name: notebook
+    user: root
     ports:
       - 8888:8888
     volumes:
