@@ -77,7 +77,7 @@ contains
     p_theta_1 = p_theta_0 + D_LAMBDA * RK_inc(6)
     ! ->
 
-    print *, RK_inc
+    ! print *, RK_inc
 
     return
   end subroutine null_geodesic_RK4
@@ -127,5 +127,24 @@ contains
 
     return
   end subroutine null_geodesic_equation
+
+!===============================================================================
+  subroutine update(t, r, theta, phi, p_r, p_theta, &
+                    t_upd, r_upd, theta_upd, phi_upd, p_r_upd, p_theta_upd)
+
+    implicit none
+    real(8), intent(in)  :: t_upd, r_upd, theta_upd, phi_upd, &
+                            p_r_upd, p_theta_upd
+    real(8), intent(out) :: t, r, theta, phi, p_r, p_theta
+
+    t       = t_upd
+    r       = r_upd
+    theta   = theta_upd
+    phi     = phi_upd
+    p_r     = p_r_upd
+    p_theta = p_theta_upd
+
+    return
+  end subroutine update
 
 end module integration

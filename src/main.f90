@@ -1,40 +1,54 @@
 program main
 
-  use integration
-  use calculation
   use parameters
-  use transformation
+  use calculation, only : deg2rad
+  use initialization
+  use integration
 
   implicit none
-  real(8) :: i, j
-  real(8) :: x, y, z
-  real(8) :: t, r, theta, phi, p_t, p_r, p_theta, p_phi
+  real(8) :: i_pixel, j_pixel
+  real(8) :: r_screen, theta_screen, phi_screen
+  real(8) :: t, r, theta, phi
+  real(8) :: p_t, p_r, p_theta, p_phi
   real(8) :: E, L, Q
+
+  real(8) :: tmp
   real(8) :: t_upd, r_upd, theta_upd, phi_upd, p_r_upd, p_theta_upd
 
   ! loop variants
-  i = SCREEN_X
-  j = SCREEN_Y
+  i_pixel = SCREEN_X
+  j_pixel = SCREEN_Y
 
-  call screen2cartesian(i, j, x, y, z)
-  call cartesian2boyerlindquist(x, y, z, r, theta, phi)
-  call initialize(t, r, theta, phi, p_t, p_r, p_theta, p_phi, E, L, Q)
+  r_screen = DISTANCE
+  call deg2rad(ELEVATION, tmp)
+  theta_screen = PI * 0.5d0 - tmp
+  call deg2rad(AZIMUTH, phi_screen)
 
-  open(97, file="output.csv", status="replace")
+  call initialize(i_pixel, j_pixel, &
+                  r_screen, theta_screen, phi_screen, &
+                  t, r, theta, phi, &
+                  p_t, p_r, p_theta, p_phi, &
+                  E, L, Q)
+
+  open(97, file="output2.csv", status="replace")
   do
-    if ((r .gt. MAX_R) .or. (r .le. MIN_R)) then
-      exit
-    end if
+    ! if ((r .gt. MAX_R) .or. (r .le. MIN_R)) then
+    !   exit
+    ! end if
 
-    write(97, '(f12.6,",",f12.6,",",f12.6,",",f12.6,",",f12.6,",",f12.6,",",f12.6)') &
-          t, r, theta, phi, p_r, p_theta, p_phi
-    ! print *, t, r, theta, phi, p_r, p_theta, p_phi
+    write(97, '(f12.6,",",f12.6,",",f12.6,",",f12.6,",",f12.6,",",f12.6)') &
+          t, r, theta, phi, p_r, p_theta
+    print *, t, r, theta, phi, p_r, p_theta, p_phi
 
     call null_geodesic_RK4(E, L, Q, t, r, theta, phi, p_r, p_theta, &
           t_upd, r_upd, theta_upd, phi_upd, p_r_upd, p_theta_upd)
 
     call update(t, r, theta, phi, p_r, p_theta, &
                 t_upd, r_upd, theta_upd, phi_upd, p_r_upd, p_theta_upd)
+
+    if ((r .gt. MAX_R) .or. (r .le. MIN_R)) then
+      exit
+    end if
   end do
   close(97)
 
