@@ -1,150 +1,152 @@
 module integration
 
   implicit none
-  public  :: null_geodesic_RK4
-  private :: null_geodesic_equation
+  public  :: null_geodesic_RK4, update_ray
+  private :: null_geodesic_equations, add_ray
 
 contains
 
 !===============================================================================
-  subroutine null_geodesic_RK4(E, L, Q, &
-                               t_0, r_0, theta_0, phi_0, p_r_0, p_theta_0, &
-                               t_1, r_1, theta_1, phi_1, p_r_1, p_theta_1)
+  subroutine null_geodesic_RK4(E, L, Q, ray, ray_update)
 
     use parameters
-    use calculation, only : calc_Sigma, calc_Delta
 
     implicit none
-    real(8), intent(in) :: E, L, Q
-    real(8), intent(in) :: t_0, r_0, theta_0, phi_0, p_r_0, p_theta_0
-    real(8), intent(out) :: t_1, r_1, theta_1, phi_1, p_r_1, p_theta_1
-    real(8) :: Sigma, Delta, kappa
-    real(8), dimension(6) :: k0, k1, k2, k3, RK_inc
+    double precision, intent(in)  :: E, L, Q
+    double precision, intent(in)  :: ray(6)
+    double precision, intent(out) :: ray_update(6)
+
+    double precision :: tmp1(6), tmp2(6), tmp3(6), tmp4(6)
+    double precision :: k1(6), k2(6), k3(6), k4(6), RK_inc(6)
     integer :: i
 
-    ! ...
-    ! for convenience
-    ! <-
-    call calc_Sigma(r_0, theta_0, Sigma)
-    call calc_Delta(r_0, Delta)
-    kappa = Q + L * L + BH_A * BH_A * E * E
-    ! ->
-
-    ! ...
-    ! 4th order Runge-Kutta method
-    ! <-
-    call null_geodesic_equation(E, L, Sigma, Delta, kappa, &
-                                r_0, &
-                                theta_0, &
-                                p_r_0, &
-                                k0)
-
-    call null_geodesic_equation(E, L, Sigma, Delta, kappa, &
-                                r_0     + 0.5d0 * D_LAMBDA * k0(2), &
-                                theta_0 + 0.5d0 * D_LAMBDA * k0(3), &
-                                p_r_0   + 0.5d0 * D_LAMBDA * k0(5), &
-                                k1)
-
-    call null_geodesic_equation(E, L, Sigma, Delta, kappa, &
-                                r_0     + 0.5d0 * D_LAMBDA * k1(2), &
-                                theta_0 + 0.5d0 * D_LAMBDA * k1(3), &
-                                p_r_0   + 0.5d0 * D_LAMBDA * k1(5), &
-                                k2)
-
-    call null_geodesic_equation(E, L, Sigma, Delta, kappa, &
-                                r_0     + D_LAMBDA * k2(2), &
-                                theta_0 + D_LAMBDA * k2(3), &
-                                p_r_0   + D_LAMBDA * k2(5), &
-                                k3)
-
-    ! initialization
+    ! Initialization
     do i = 1, 6
       RK_inc(i) = 0.0d0
     end do
 
-    ! calculate RK4 gradients
+    ! ...
+    ! 4th Order Runge-Kutta Method
+    ! <-
+
+    ! Calculate RK4 gradients
+    call update_ray(ray, tmp1)
+    call null_geodesic_equations(E, L, Q, tmp1, k1)
+
+    call add_ray(tmp1, k1, 0.5d0, tmp2)
+    call null_geodesic_equations(E, L, Q, tmp2, k2)
+
+    call add_ray(tmp1, k2, 0.5d0, tmp3)
+    call null_geodesic_equations(E, L, Q, tmp3, k3)
+
+    call add_ray(tmp1, k3, 1.0d0, tmp4)
+    call null_geodesic_equations(E, L, Q, tmp4, k4)
+
+    ! Calculate RK4 increments
     do i = 1, 6
       RK_inc(i) = RK_inc(i) &
-                  + (k0(i) + 2.0d0 * k1(i) + 2.0d0 * k2(i) + k3(i)) / 6.0d0
+                  + (k1(i) + 2.0d0*k2(i) + 2.0d0*k3(i) + k4(i))/6.0d0
+    end do
+    ! print *, RK_inc
+
+    ! Update variables
+    do i = 1, 6
+      ray_update(i) = ray(i) + RK_STEP*RK_inc(i)
     end do
 
-    ! update variables
-    t_1       = t_0       + D_LAMBDA * RK_inc(1)
-    r_1       = r_0       + D_LAMBDA * RK_inc(2)
-    theta_1   = theta_0   + D_LAMBDA * RK_inc(3)
-    phi_1     = phi_0     + D_LAMBDA * RK_inc(4)
-    p_r_1     = p_r_0     + D_LAMBDA * RK_inc(5)
-    p_theta_1 = p_theta_0 + D_LAMBDA * RK_inc(6)
     ! ->
-
-    ! print *, RK_inc
 
     return
   end subroutine null_geodesic_RK4
 
 !===============================================================================
-  subroutine null_geodesic_equation(E, L, Sigma, Delta, kappa, &
-                                    r, theta, p_r, k)
+  subroutine null_geodesic_equations(E, L, Q, ray, k)
 
     use parameters
+    use calculation, only : calc_sigma, calc_delta, calc_energy, &
+                            calc_angular_momentum, calc_carter_constant
 
     implicit none
-    real(8), intent(in) :: E, L, Sigma, Delta, kappa
-    real(8), intent(in) :: r, theta, p_r
-    real(8), dimension(6), intent(out) :: k
-    real(8) :: sintheta, Sigma_inverse, Sigma_Delta_inverse
+    double precision, intent(in)  :: E, L, Q
+    double precision, intent(in)  :: ray(6)
+    double precision, intent(out) :: k(6)
 
-    ! ...
-    ! for convenience
-    ! <-
+    double precision :: t, r, theta, phi, p_r, p_theta
+    double precision :: sigma, delta, sigma_inverse, delta_inverse
+    double precision :: kappa, sintheta
+
+    ! tmp
+    t       = ray(1)
+    r       = ray(2)
+    theta   = ray(3)
+    phi     = ray(4)
+    p_r     = ray(5)
+    p_theta = ray(6)
+
+    sigma         = calc_sigma(r, theta)
+    sigma_inverse = 1.0d0/sigma
+    delta         = calc_delta(r)
+    delta_inverse = 1.0d0/delta
+
+    kappa    = Q + L*L + BH_A*BH_A*E*E
     sintheta = sin(theta)
-    Sigma_inverse = 1.0d0 / Sigma
-    Sigma_Delta_inverse = 1.0d0 / (Sigma * Delta)
-    ! ->
 
     ! ...
     ! Null Geodesic Equations
     ! <-
-    ! dot_p_r
-    k(5) = (2.0d0 * r * (r * r + BH_A * BH_A) * E * E &
-            - 2.0d0 * BH_A * E * L &
-            - kappa * (r - 1.0d0)) * Sigma_Delta_inverse &
-            - 2.0d0 * p_r * p_r * (r - 1.0d0) * Sigma_inverse
-    ! dot_p_theta
-    k(6) = (L * L / (sintheta * sintheta * sintheta * sintheta) &
-            - BH_A * BH_A * E * E) * sintheta * cos(theta) * Sigma_inverse
-    ! dot_t
-    k(1) = E + 2.0d0 * (r * (r * r + BH_A * BH_A) * E - BH_A * r * L) &
-            * Sigma_Delta_inverse
-    ! dot_r
-    k(2) = k(5) * Delta * Sigma_inverse
-    ! dot_theta
-    k(3) = k(6) * Sigma_inverse
-    ! dot_phi
-    k(4) = (2.0d0 * BH_A * r * E + (Sigma - 2.0d0 * r) * L &
-            / (sintheta * sintheta)) * Sigma_Delta_inverse
+    k(1) = E + sigma_inverse*delta_inverse &
+            *(2.0d0*r*(r*r + BH_A*BH_A)*E*E - 2.0d0*BH_A*r*L)
+    k(2) = p_r*delta*sigma_inverse
+    k(3) = p_theta*sigma_inverse
+    k(4) = sigma_inverse*delta_inverse*(2.0d0*BH_A*r*E &
+            + (sigma - 2.0d0*r)*L/(sintheta*sintheta))
+    k(5) = sigma_inverse*delta_inverse*(-kappa*(r - 1.0d0) &
+            + 2.0d0*r*(r*r + BH_A*BH_A)*E*E - 2.0d0*BH_A*E*L) &
+            - 2.0d0*p_r*p_r*(r - 1.0d0)*sigma_inverse
+    k(6) = sintheta*cos(theta)*sigma_inverse &
+            *(L*L/(sintheta*sintheta*sintheta*sintheta) &
+            - BH_A*BH_A*E*E)
     ! ->
 
+    ! print *, ray
+    ! print *, k
+
     return
-  end subroutine null_geodesic_equation
+  end subroutine null_geodesic_equations
 
 !===============================================================================
-  subroutine update(t, r, theta, phi, p_r, p_theta, &
-                    t_upd, r_upd, theta_upd, phi_upd, p_r_upd, p_theta_upd)
+  subroutine update_ray(ray_update, ray)
 
     implicit none
-    real(8), intent(in)  :: t_upd, r_upd, theta_upd, phi_upd, &
-                            p_r_upd, p_theta_upd
-    real(8), intent(out) :: t, r, theta, phi, p_r, p_theta
+    double precision, intent(in)  :: ray_update(6)
+    double precision, intent(out) :: ray(6)
 
-    t       = t_upd
-    r       = r_upd
-    theta   = theta_upd
-    phi     = phi_upd
-    p_r     = p_r_upd
-    p_theta = p_theta_upd
+    integer :: i
+
+    do i = 1, 6
+      ray(i) = ray_update(i)
+    end do
 
     return
-  end subroutine update
+  end subroutine update_ray
+
+!===============================================================================
+  subroutine add_ray(ray, ray_add, weight, ray_added)
+
+    use parameters
+
+    implicit none
+    double precision, intent(in)  :: ray(6), ray_add(6)
+    double precision, intent(in)  :: weight
+    double precision, intent(out) :: ray_added(6)
+
+    integer :: i
+
+    do i = 1, 6
+      ray_added(i) = ray(i) + weight*RK_STEP*ray_add(i)
+    end do
+
+    return
+  end subroutine add_ray
 
 end module integration

@@ -1,115 +1,83 @@
 module transformation
 
   implicit none
-  public :: screen2cartesian, cartesian2boyerlindquist, initialize, update
+  public :: screen2bhcartesian, bhcartesian2boyerlindquist, calc_direction
   private
 
 contains
 
 !===============================================================================
-  subroutine screen2cartesian(i, j, x, y, z)
-
-    use parameters
-    use calculation, only : deg2rad
-
-    implicit none
-    real(8), intent(in)  :: i, j
-    real(8), intent(out) :: x, y, z
-
-    real(8) :: theta, phi
-
-    call deg2rad(ELEVATION, theta)
-    theta = PI * 0.5d0 - theta
-    call deg2rad(AZIMUTH, phi)
-
-    x = -j * cos(theta) * cos(phi) - i * sin(phi) &
-        + DISTANCE * sin(theta) * cos(phi)
-    y = -j * cos(theta) * sin(phi) + i * cos(phi) &
-        + DISTANCE * sin(theta) * sin(phi)
-    z = DISTANCE * cos(theta) + j * sin(theta)
-
-    return
-  end subroutine screen2cartesian
-
-!===============================================================================
-  subroutine cartesian2boyerlindquist(x, y, z, r, theta, phi)
+  subroutine screen2bhcartesian(i_pixel, j_pixel, &
+                                r_screen, theta_screen, phi_screen, &
+                                x_bh, y_bh, z_bh)
 
     use parameters
 
     implicit none
-    real(8), intent(in)  :: x, y, z
-    real(8), intent(out) :: r, theta, phi
+    double precision, intent(in)  :: i_pixel, j_pixel
+    double precision, intent(in)  :: r_screen, theta_screen, phi_screen
+    double precision, intent(out) :: x_bh, y_bh, z_bh
 
-    real(8) :: tmp
+    double precision :: tmp
 
-    tmp = x * x + y * y + z * z - BH_A * BH_A
+    tmp = sqrt(r_screen*r_screen + BH_A*BH_A)*sin(theta_screen) &
+          - j_pixel*cos(theta_screen)
 
-    r     = sqrt((tmp + sqrt(tmp * tmp + 4.0d0 * BH_A * BH_A * z * z)) * 0.5d0)
-    theta = acos(z / r)
-    phi   = atan2(y, x)
+    x_bh = tmp*cos(phi_screen) - i_pixel*sin(phi_screen)
+    y_bh = tmp*sin(phi_screen) + i_pixel*cos(phi_screen)
+    z_bh = r_screen*cos(theta_screen) + j_pixel*sin(theta_screen)
 
     return
-  end subroutine cartesian2boyerlindquist
+  end subroutine screen2bhcartesian
 
 !===============================================================================
-  subroutine initialize(t, r, theta, phi, p_t, p_r, p_theta, p_phi, E, L, Q)
+  subroutine bhcartesian2boyerlindquist(x_bh, y_bh, z_bh, &
+                                        r_by, theta_by, phi_by)
 
     use parameters
-    use calculation, only : deg2rad, calc_Sigma, calc_Delta, calc_ELQ
 
     implicit none
-    real(8), intent(in)  :: r, theta, phi
-    real(8), intent(out) :: t, p_t, p_r, p_theta, p_phi, E, L, Q
+    double precision, intent(in)  :: x_bh, y_bh, z_bh
+    double precision, intent(out) :: r_by, theta_by, phi_by
 
-    real(8) :: theta_screen, phi_screen
-    real(8) :: tmp_r, tmp_phi
-    real(8) :: sigma, delta
-    real(8) :: dot_r, dot_theta, dot_phi
+    double precision :: tmp
 
-    call deg2rad(ELEVATION, theta_screen)
-    theta_screen = PI * 0.5d0 - theta_screen
-    call deg2rad(AZIMUTH, phi_screen)
+    tmp = x_bh*x_bh + y_bh*y_bh + z_bh*z_bh - BH_A*BH_A
 
-    tmp_r   = sqrt(r * r + BH_A * BH_A)
-    tmp_phi = phi - phi_screen
-
-    call calc_Sigma(r, theta, sigma)
-    call calc_Delta(r, delta)
-
-    dot_r = -(r * tmp_r * sin(theta) * sin(theta_screen) * cos(tmp_phi) &
-              + tmp_r * tmp_r * cos(theta) * cos(theta_screen)) / sigma
-    dot_theta = (r * sin(theta) * cos(theta_screen) &
-                - tmp_r * cos(theta) * sin(theta_screen) * cos(tmp_phi)) / sigma
-    dot_phi = sin(theta_screen) * sin(tmp_phi) / (tmp_r * sin(theta))
-
-    call calc_ELQ(r, theta, dot_r, dot_theta, dot_phi, E, L, Q)
-
-    t       = 0.0d0
-    p_t     = -E
-    p_r     = dot_r * sigma / delta
-    p_theta = dot_theta * sigma
-    p_phi   = L
+    r_by     = sqrt(0.5d0*(tmp + sqrt(tmp*tmp + 4.0d0*BH_A*BH_A*z_bh*z_bh)))
+    theta_by = acos(z_bh/r_by)
+    phi_by   = atan2(y_bh, x_bh)
 
     return
-  end subroutine initialize
+  end subroutine bhcartesian2boyerlindquist
 
 !===============================================================================
-  subroutine update(t, r, theta, phi, p_r, p_theta, &
-                    t_upd, r_upd, theta_upd, phi_upd, p_r_upd, p_theta_upd)
+  subroutine calc_direction(r_by, theta_by, phi_by, &
+                            theta_screen, phi_screen, &
+                            dot_r_by, dot_theta_by, dot_phi_by)
+
+    use parameters
+    use calculation, only : calc_sigma
 
     implicit none
-    real(8), intent(in)  :: t_upd, r_upd, theta_upd, phi_upd, &
-                            p_r_upd, p_theta_upd
-    real(8), intent(out) :: t, r, theta, phi, p_r, p_theta
+    double precision, intent(in)  :: r_by, theta_by, phi_by
+    double precision, intent(in)  :: theta_screen, phi_screen
+    double precision, intent(out) :: dot_r_by, dot_theta_by, dot_phi_by
 
-    t       = t_upd
-    r       = r_upd
-    theta   = theta_upd
-    phi     = phi_upd
-    p_r     = p_r_upd
-    p_theta = p_theta_upd
+    double precision :: tmp_R, tmp_PHI
+
+    tmp_R = sqrt(r_by*r_by + BH_A*BH_A)
+    tmp_PHI = phi_by - phi_screen
+
+    dot_r_by     = -(r_by*tmp_R*sin(theta_by)*sin(theta_screen)*cos(tmp_PHI) &
+                    + tmp_R*tmp_R*cos(theta_by)*cos(theta_screen)) &
+                    /calc_sigma(r_by, theta_by)
+    dot_theta_by = (r_by*sin(theta_by)*cos(theta_screen) &
+                    - tmp_R*cos(theta_by)*sin(theta_screen)*cos(tmp_PHI) &
+                    /calc_sigma(r_by, theta_by))
+    dot_phi_by   = sin(theta_screen)*sin(tmp_PHI)/(tmp_R*sin(theta_by))
 
     return
-  end subroutine update
+  end subroutine calc_direction
 
 end module transformation

@@ -5,6 +5,7 @@ target_link_libraries(main
         integration
         parameters
         initialization
+        transformation
     )
 
 add_fortran_library(calculation
@@ -22,11 +23,11 @@ add_fortran_library(parameters
     parameters.f90
     )
 
-# add_fortran_library(transformation
-#     transformation.f90
-#     calculation.f90
-#     parameters.f90
-#     )
+add_fortran_library(transformation
+    transformation.f90
+    calculation.f90
+    parameters.f90
+    )
 
 add_fortran_library(initialization
     initialization.f90

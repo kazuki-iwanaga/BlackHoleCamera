@@ -1,134 +1,123 @@
 module calculation
 
   implicit none
-  public :: calc_ELQ, calc_Energy, calc_Angular_Momentum, &
-            calc_Carter_Constant, calc_Sigma, calc_Delta, &
-            deg2rad, rad2deg
+  public :: deg2rad, calc_sigma, calc_delta, &
+            calc_energy, calc_angular_momentum, calc_carter_constant
   private
 
 contains
 
 !===============================================================================
-  subroutine deg2rad(deg, rad)
+  function deg2rad(deg)
 
     use parameters
 
     implicit none
-    real(8), intent(in)  :: deg
-    real(8), intent(out) :: rad
+    double precision :: deg
+    double precision :: deg2rad
 
-    rad = deg * PI / 180.0d0
+    deg2rad = deg * PI / 180.0d0
 
-    return
-  end subroutine deg2rad
+  end function deg2rad
 
 !===============================================================================
-  subroutine rad2deg(rad, deg)
+  function calc_sigma(r_by, theta_by)
 
     use parameters
 
     implicit none
-    real(8), intent(in)  :: rad
-    real(8), intent(out) :: deg
+    double precision :: r_by, theta_by
+    double precision :: calc_sigma
 
-    deg = rad * 180.0d0 / PI
+    calc_sigma = r_by*r_by + BH_A*BH_A*cos(theta_by)*cos(theta_by)
 
-    return
-  end subroutine rad2deg
-
-!===============================================================================
-  subroutine calc_ELQ(r, theta, dot_r, dot_theta, dot_phi, E, L, Q)
-
-    implicit none
-    real(8), intent(in)  :: r, theta, dot_r, dot_theta, dot_phi
-    real(8), intent(out) :: E, L, Q
-    real(8) :: Sigma, Delta
-
-    call calc_Sigma(r, theta, Sigma)
-    call calc_Delta(r, Delta)
-
-    call calc_Energy(r, theta, dot_r, dot_theta, dot_phi, Sigma, Delta, E)
-    call calc_Angular_Momentum(r, theta, dot_phi, Sigma, Delta, E, L)
-    call calc_Carter_Constant(theta, dot_theta, Sigma, E, L, Q)
-
-    return
-  end subroutine calc_ELQ
+  end function calc_sigma
 
 !===============================================================================
-  subroutine calc_Energy(r, theta, dot_r, dot_theta, dot_phi, Sigma, Delta, E)
-
-    implicit none
-    real(8), intent(in)  :: r, theta, dot_r, dot_theta, dot_phi
-    real(8), intent(in)  :: Sigma, Delta
-    real(8), intent(out) :: E
-    real(8) :: E_sq
-
-    E_sq = (Sigma - 2.0d0 * r) * (Sigma * dot_r * dot_r &
-            + Sigma * Delta * dot_theta * dot_theta) / (Sigma * Delta) &
-            + Delta * dot_phi * dot_phi * sin(theta) * sin(theta)
-    E = sqrt(E_sq)
-
-    return
-  end subroutine calc_Energy
-
-!===============================================================================
-  subroutine calc_Angular_Momentum(r, theta, dot_phi, Sigma, Delta, E, L)
+  function calc_delta(r_by)
 
     use parameters
 
     implicit none
-    real(8), intent(in)  :: r, theta, dot_phi
-    real(8), intent(in)  :: Sigma, Delta, E
-    real(8), intent(out) :: L
+    double precision :: r_by
+    double precision :: calc_delta
 
-    L = (Sigma * Delta * dot_phi - 2.0d0 * BH_A * r * E) &
-          * sin(theta)*sin(theta) / (Sigma - 2.0d0 * r)
+    calc_delta = r_by*r_by - 2.0d0*BH_M*r_by + BH_A*BH_A
 
-    return
-  end subroutine calc_Angular_Momentum
+  end function calc_delta
 
 !===============================================================================
-  subroutine calc_Carter_Constant(theta, dot_theta, Sigma, E, L, Q)
+  function calc_energy(r_by, theta_by, &
+                       dot_r_by, dot_theta_by, dot_phi_by)
 
     use parameters
 
     implicit none
-    real(8), intent(in)  :: theta, dot_theta
-    real(8), intent(in)  :: Sigma, E, L
-    real(8), intent(out) :: Q
+    double precision :: r_by, theta_by
+    double precision :: dot_r_by, dot_theta_by, dot_phi_by
+    double precision :: calc_energy
 
-    Q = Sigma * Sigma * dot_theta * dot_theta + cos(theta) * cos(theta) &
-        * (L * L / (sin(theta) * sin(theta)) - BH_A * BH_A * E * E)
+    double precision :: sigma, delta
 
-    return
-  end subroutine calc_Carter_Constant
+    sigma = calc_sigma(r_by, theta_by)
+    delta = calc_delta(r_by)
+
+    calc_energy = sqrt((sigma - 2.0d0*r_by)*(dot_r_by*dot_r_by/delta &
+                    + dot_theta_by*dot_theta_by) &
+                    + delta*dot_phi_by*dot_phi_by*sin(theta_by)*sin(theta_by))
+
+  end function calc_energy
 
 !===============================================================================
-  subroutine calc_Sigma(r, theta, Sigma)
+  function calc_angular_momentum(r_by, theta_by, &
+                                 dot_r_by, dot_theta_by, dot_phi_by)
 
     use parameters
 
     implicit none
-    real(8), intent(in)  :: r, theta
-    real(8), intent(out) :: Sigma
+    double precision :: r_by, theta_by
+    double precision :: dot_r_by, dot_theta_by, dot_phi_by
+    double precision :: calc_angular_momentum
 
-    Sigma = r * r + BH_A * BH_A * cos(theta) * cos(theta)
+    double precision :: sigma, delta
 
-    return
-  end subroutine calc_Sigma
+    sigma = calc_sigma(r_by, theta_by)
+    delta = calc_delta(r_by)
+
+    calc_angular_momentum = sin(theta_by)*sin(theta_by) &
+                              *(sigma*delta*dot_phi_by - 2.0d0*BH_A*r_by &
+                              *calc_energy(r_by, theta_by, dot_r_by, &
+                                           dot_theta_by, dot_phi_by)) &
+                              /(sigma - 2.0d0*r_by)
+
+  end function calc_angular_momentum
 
 !===============================================================================
-  subroutine calc_Delta(r, Delta)
+  function calc_carter_constant(r_by, theta_by, &
+                                dot_r_by, dot_theta_by, dot_phi_by)
 
     use parameters
 
     implicit none
-    real(8), intent(in)  :: r
-    real(8), intent(out) :: Delta
+    double precision :: r_by, theta_by
+    double precision :: dot_r_by, dot_theta_by, dot_phi_by
+    double precision :: calc_carter_constant
 
-    Delta = r * r - 2.0d0 * r * BH_M + BH_A * BH_A
+    double precision :: sigma, delta, E, L
 
-    return
-  end subroutine calc_Delta
+    sigma = calc_sigma(r_by, theta_by)
+    delta = calc_delta(r_by)
+
+    E =  calc_energy(r_by, theta_by, &
+                     dot_r_by, dot_theta_by, dot_phi_by)
+    L =  calc_angular_momentum(r_by, theta_by, &
+                               dot_r_by, dot_theta_by, dot_phi_by)
+
+    calc_carter_constant = sigma*sigma*dot_theta_by*dot_theta_by &
+                            + cos(theta_by)*cos(theta_by) &
+                            *(L*L/sin(theta_by)/sin(theta_by) &
+                            - BH_A*BH_A*E*E)
+
+  end function calc_carter_constant
 
 end module calculation
