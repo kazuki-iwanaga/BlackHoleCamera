@@ -42,15 +42,15 @@ program black_hole_camera
   ! ...
   ! Select pixels
   ! <-
-  do i = 1, 101
+  do i = 1, 100
   ! do i = 1, 51
-  do j = 1, 101
+  do j = 1, 100
   ! i_pixel = X_PIXEL
   ! i_pixel = -15.0d0 + 0.6d0*dble(i-1)
-  i_pixel = -15.0d0 + 0.3d0*dble(i-1)
+  i_pixel = -30.0d0 + 0.6d0*dble(i-1)
   ! i_pixel = -8.75d0 + 0.5d0*dble(i-1)
   ! j_pixel = Y_PIXEL
-  j_pixel = -15.0d0 + 0.3d0*dble(j-1)
+  j_pixel = -30.0d0 + 0.6d0*dble(j-1)
   ! ->
   ! print *, i_pixel, j_pixel, r_screen, theta_screen, phi_screen
 
@@ -129,9 +129,9 @@ program black_hole_camera
     z   = ray(2)*cos(ray(3))
     tmp = sqrt(x*x + y*y)
 
-    if (ray(2) .lt. 15.0d0) then
+    if (ray(2) .lt. 60.0d0) then
       ! if (ray(2) .lt. gass_range) then
-      if ((tmp .lt. 10.0d0) .and. (abs(z) .lt. 1.0d0)) then
+      if ((tmp .lt. 40.0d0) .and. (abs(z) .lt. 0.5d0)) then
 
         ! write(97, '(f12.6,",",f12.6,",",f12.6,",",f12.6,",",f12.6,",",f12.6)') &
         !   ray
